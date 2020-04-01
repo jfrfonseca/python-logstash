@@ -4,7 +4,7 @@ from logstash.formatter import LogstashFormatterVersion0, LogstashFormatterVersi
 from logstash.handler_tcp import TCPLogstashHandler
 from logstash.handler_udp import UDPLogstashHandler, LogstashHandler
 try:
-    from logstash.handler_amqp import AMQPLogstashHandler
+    from logstash.handler_amqp import AMQPLogstashHandler, AMQPLogstashHandlerTornado
 except:
    # you need to install AMQP support to enable this handler.
    pass

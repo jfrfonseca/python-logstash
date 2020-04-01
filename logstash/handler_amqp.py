@@ -8,6 +8,7 @@ from logging import Filter
 from logging.handlers import SocketHandler
 
 import pika
+from pika.adapters.tornado_connection import TornadoConnection
 from logstash import formatter
 
 
@@ -92,6 +93,22 @@ class AMQPLogstashHandler(SocketHandler, object):
         return self.formatter.format(record)
 
 
+class AMQPLogstashHandlerTornado(AMQPLogstashHandler):
+
+    def makeSocket(self, **kwargs):
+
+        return PikaSocketTornado(self.host,
+                                 self.port,
+                                 self.username,
+                                 self.password,
+                                 self.virtual_host,
+                                 self.exchange,
+                                 self.routing_key,
+                                 self.exchange_is_durable,
+                                 self.declare_exchange_passively,
+                                 self.exchange_type)
+
+
 class PikaSocket(object):
 
     def __init__(self, host, port, username, password, virtual_host, exchange,
@@ -102,8 +119,10 @@ class PikaSocket(object):
         parameters = pika.ConnectionParameters(host, port, virtual_host,
                                                credentials)
 
-        # create connection & channel
-        self.connection = pika.BlockingConnection(parameters)
+        # create connection
+        self.connection = self.create_connection(parameters)
+
+        # create channel
         self.channel = self.connection.channel()
 
         # create an exchange, if needed
@@ -117,6 +136,9 @@ class PikaSocket(object):
         self.routing_key = routing_key
         self.exchange = exchange
 
+    @staticmethod
+    def create_connection(parameters):
+        return pika.BlockingConnection(parameters)
 
     def sendall(self, data):
 
@@ -130,3 +152,10 @@ class PikaSocket(object):
             self.connection.close()
         except Exception:
             pass
+
+
+class PikaSocketTornado(PikaSocket):
+
+    @staticmethod
+    def create_connection(parameters):
+        return TornadoConnection(parameters)
